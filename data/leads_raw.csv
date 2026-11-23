@@ -1,0 +1,26 @@
+company,website,contact_name,contact_email,title,country,city,employees,industry,source
+PeopleCo GmbH,https://www.peopleco.de/about,Anna Müller,anna@peopleco.de,CTO,DE,Berlin,120,Software,apollo
+Peopleco,peopleco.de,Jan Weber,jan.weber@peopleco.de,Head of IT,Germany,Berlin,,software,webinar
+Nordbank Tech B.V.,nordbanktech.nl,Sanne de Vries,sanne@nordbanktech.nl,CEO,NL,Amsterdam,80,FinTech,apollo
+Brightforge,https://brightforge.io,Luca Rossi,luca@brightforge.io,VP Engineering,AT,Vienna,51-200,SaaS,clay
+Alpenwerk AG,www.alpenwerk.ch,Martina Keller,m.keller@alpenwerk.ch,Head of Security,CH,Zurich,450,Automotive,apollo
+Corvex Analytics,https://corvex.de,,info@corvex.de,,DE,Munich,35,Software,website
+Quill Media,quillmedia.co.uk,Tom Hart,tom@quillmedia.co.uk,Founder,UK,London,12,Media,clay
+Harbourline,https://www.harbourline.be,Pieter Claes,pieter@harbourline.be,CTO,BE,Antwerp,210,Logistics,apollo
+Solvia Health,solvia-health.de,Dr. Eva Brandt,eva.brandt@solvia-health.de,COO,DE,Hamburg,95,Health Tech,webinar
+,,Max Fischer,max.fischer@gmail.com,Freelancer,DE,Cologne,1,,website
+Pinecrest Software,pinecrest.io,Sophie Martin,sophie@pinecrest.io,Head of Engineering,FR,Paris,300,Software,clay
+Altamira Pay,altamirapay.com,Javier Ruiz,javier@altamirapay.com,CFO,ES,Madrid,abc,Fintech,apollo
+Brightforge GmbH,www.Brightforge.io,Nina Hofer,nina.hofer@brightforge.io,Head of IT,Austria,Vienna,140,saas,webinar
+Lumen Robotics,lumenrobotics.de,Felix Braun,felix@lumenrobotics.de,CEO,DE,Stuttgart,600,Automotive,apollo
+Vektor Cloud,https://vektorcloud.nl,Daan Bakker,daan@vektorcloud.nl,CTO,NL,Utrecht,45,Software,website
+Opal Analytics,opalanalytics.de,Lena Vogel,lena@opalanalytics.de,CEO,DE,Leipzig,25,Software,clay
+,,Julia Schmidt,julia@kranich-logistik.de,Head of IT,DE,Bremen,,Logistics,website
+Nordbank Tech,https://www.nordbanktech.nl/,Sanne de Vries,sanne@nordbanktech.nl,CEO,NL,Amsterdam,80,Fintech,webinar
+Greenleaf Retail,greenleafretail.com,Mark Stone,mark@greenleafretail.com,COO,US,Austin,2000,Retail,apollo
+Tessera Insure,tessera-insure.lu,Claire Weber,claire@tessera-insure.lu,CISO,LU,Luxembourg,150,Insurtech,clay
+Kite Labs,kitelabs.io,Ravi Patel,ravi@kitelabs.io,Founder,DE,Berlin,8,Software,website
+Mosaic HR,mosaichr.de,Paul Lang,paul.lang@mosaichr.de,VP Sales,DE,Frankfurt,70,HR Tech,apollo
+,,Sara Lopez,sara.lopez@yahoo.com,Student,ES,Barcelona,,,website
+Vektor Cloud B.V.,vektorcloud.nl,Emma Visser,emma@vektorcloud.nl,Head of Security,Netherlands,Utrecht,45,software,clay
+Fjord Systems,fjordsystems.no,Ole Hansen,ole@fjordsystems.no,CTO,NO,Oslo,90,Software,apollo

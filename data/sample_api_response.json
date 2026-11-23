@@ -1,0 +1,45 @@
+{
+  "results": [
+    {
+      "id": "1001",
+      "properties": {
+        "name": "PeopleCo GmbH",
+        "domain": "peopleco.de",
+        "numberofemployees": "120",
+        "industry": "COMPUTER_SOFTWARE",
+        "country": "Germany",
+        "hubspot_owner_id": "lena"
+      },
+      "createdAt": "2026-03-02T09:15:00Z",
+      "updatedAt": "2026-11-20T16:40:12Z"
+    },
+    {
+      "id": "1002",
+      "properties": {
+        "name": "Nordbank Tech B.V.",
+        "domain": "nordbanktech.nl",
+        "numberofemployees": "80",
+        "industry": "FINANCIAL_SERVICES",
+        "country": "Netherlands",
+        "hubspot_owner_id": null
+      },
+      "createdAt": "2026-05-11T12:00:00Z",
+      "updatedAt": "2026-11-18T08:05:44Z"
+    },
+    {
+      "id": "1003",
+      "properties": {
+        "name": "Mystery Corp",
+        "domain": null
+      },
+      "createdAt": "2026-06-01T10:00:00Z",
+      "updatedAt": "2026-06-01T10:00:00Z"
+    }
+  ],
+  "paging": {
+    "next": {
+      "after": "1003",
+      "link": "https://api.example.com/crm/v3/objects/companies?after=1003"
+    }
+  }
+}

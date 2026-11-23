@@ -1,0 +1,16 @@
+id,name,domain,country,industry,employees,owner,score,created_at
+1,PeopleCo GmbH,peopleco.de,DE,Software,120,lena,95,2026-03-02
+2,Nordbank Tech B.V.,nordbanktech.nl,NL,Fintech,80,tom,80,2026-05-11
+3,Brightforge,brightforge.io,AT,Software,140,jonas,70,2026-04-20
+4,Alpenwerk AG,alpenwerk.ch,CH,Automotive,450,lena,65,2026-02-14
+5,Corvex Analytics,corvex.de,DE,Software,35,jonas,75,2026-07-01
+6,Harbourline,harbourline.be,BE,Logistics,210,maria,40,2026-01-09
+7,Solvia Health,solvia-health.de,DE,Healthtech,95,lena,85,2026-06-18
+8,Pinecrest Software,pinecrest.io,FR,Software,300,maria,45,2026-08-03
+9,Lumen Robotics,lumenrobotics.de,DE,Automotive,600,jonas,35,2026-09-12
+10,Vektor Cloud,vektorcloud.nl,NL,Software,45,tom,78,2026-10-01
+11,Opal Analytics,opalanalytics.de,DE,Software,25,lena,72,2026-10-15
+12,Tessera Insure,tessera-insure.lu,LU,Insurtech,150,maria,68,2026-10-20
+13,Mosaic HR,mosaichr.de,DE,HR Tech,70,,55,2026-11-02
+14,PEOPLECO GMBH,PeopleCo.de,DE,Software,120,tom,90,2026-11-10
+15,Fjord Systems,fjordsystems.no,NO,Software,90,,30,2026-11-12

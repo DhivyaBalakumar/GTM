@@ -1,0 +1,13 @@
+id,account_id,name,stage,amount_eur,owner,created_at,closed_at
+1,1,PeopleCo ISO 27001,demo_done,18000,lena,2026-10-01,
+2,2,Nordbank SOC 2 + ISO,proposal_sent,26000,tom,2026-09-15,
+3,3,Brightforge ISO 27001,closed_won,15000,jonas,2026-06-01,2026-08-20
+4,4,Alpenwerk TISAX,negotiation,32000,lena,2026-08-10,
+5,5,Corvex ISO 27001,closed_lost,12000,jonas,2026-07-15,2026-09-30
+6,7,Solvia ISO 27001,closed_won,16000,lena,2026-07-01,2026-10-05
+7,7,Solvia NIS2 add-on,meeting_booked,6000,lena,2026-11-10,
+8,8,Pinecrest SOC 2,discovery_done,14000,maria,2026-10-20,
+9,10,Vektor ISO 27001,demo_done,13000,tom,2026-11-01,
+10,12,Tessera DORA readiness,proposal_sent,22000,maria,2026-10-25,
+11,6,Harbourline ISO 27001,closed_lost,17000,maria,2026-03-01,2026-05-15
+12,3,Brightforge SOC 2 expansion,meeting_booked,9000,jonas,2026-11-15,

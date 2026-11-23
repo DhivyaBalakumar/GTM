@@ -1,0 +1,42 @@
+# Run a Python pipeline on a schedule with GitHub Actions.
+# To use it in a project: save as .github/workflows/pipeline.yml in that repo.
+# Add secrets in the repo: Settings -> Secrets and variables -> Actions -> New repository secret.
+
+name: account-pipeline
+
+on:
+  schedule:
+    - cron: "0 * * * *"        # every hour at minute 0 (UTC)
+  workflow_dispatch:            # also allows a manual "Run workflow" button
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20         # never let a stuck run go on forever
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests first
+        run: pytest -q
+
+      - name: Run the pipeline
+        env:
+          HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python src/run_pipeline.py
+
+      - name: Alert on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-Type: application/json' \
+            --data "{\"text\": \"🔴 account-pipeline failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+            "$SLACK_WEBHOOK_URL"

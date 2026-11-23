@@ -1,0 +1,15 @@
+id,account_id,name,email,title,role,opened_sequence,replied
+1,1,Anna Müller,anna@peopleco.de,CTO,technical_evaluator,1,1
+2,1,Jan Weber,jan.weber@peopleco.de,Head of IT,champion,1,0
+3,2,Sanne de Vries,sanne@nordbanktech.nl,CEO,economic_buyer,1,1
+4,3,Luca Rossi,luca@brightforge.io,VP Engineering,technical_evaluator,1,0
+5,3,Nina Hofer,nina.hofer@brightforge.io,Head of IT,champion,0,0
+6,4,Martina Keller,m.keller@alpenwerk.ch,Head of Security,champion,1,0
+7,6,Pieter Claes,pieter@harbourline.be,CTO,technical_evaluator,0,0
+8,7,Eva Brandt,eva.brandt@solvia-health.de,COO,economic_buyer,1,1
+9,8,Sophie Martin,sophie@pinecrest.io,Head of Engineering,technical_evaluator,1,0
+10,10,Daan Bakker,daan@vektorcloud.nl,CTO,technical_evaluator,1,0
+11,10,Emma Visser,emma@vektorcloud.nl,Head of Security,champion,1,1
+12,11,Lena Vogel,lena@opalanalytics.de,CEO,economic_buyer,0,0
+13,12,Claire Weber,claire@tessera-insure.lu,CISO,champion,1,0
+14,9,Felix Braun,felix@lumenrobotics.de,CEO,economic_buyer,1,0
