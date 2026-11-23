@@ -9,6 +9,10 @@ alongside the hands-on modules, and run the companion code as you go.
 | 2 | [02-json-apis-and-pandas.md](02-json-apis-and-pandas.md) | How the three fit together; JSON in detail and the four kinds you'll meet; APIs (requests, methods, status codes, auth, docs); `requests`; rate limits, retries, pagination, batching, idempotency; which APIs this role uses; pandas in detail and in this role; an end-to-end example; interview Q&A | [code/json_apis_pandas_demo.py](code/json_apis_pandas_demo.py) (needs the practice API running) |
 | 3 | [03-deduplication.md](03-deduplication.md) | Dedupe from zero to advanced in 11 levels: exact matches, normalising, keys, survivorship, golden records, pandas and SQL, fuzzy matching, entity resolution, prevention with upserts, measuring; interview answers | [code/dedupe_demo.py](code/dedupe_demo.py) |
 
+Practice drill: [code/core_patterns_drill.py](code/core_patterns_drill.py) rebuilds the 6 core patterns
+from their recipes and checks your answers (guide: [HOW_TO_LEARN_THE_CODE.md](../HOW_TO_LEARN_THE_CODE.md);
+reference answers: [code/core_patterns_solutions.py](code/core_patterns_solutions.py)).
+
 One-page summary of guide 1: [14-cheatsheets/data-types-and-structures.md](../14-cheatsheets/data-types-and-structures.md).
 
 ```powershell

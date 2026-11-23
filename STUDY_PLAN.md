@@ -1,6 +1,8 @@
 # Study plan
 
-About 5–6 hours a day. Each day: **learn** (read the module, run the lessons), **build** (do the
+About 5–6 hours a day. Don't memorise code: learn each pattern's recipe and rebuild it (see
+[HOW_TO_LEARN_THE_CODE.md](HOW_TO_LEARN_THE_CODE.md) and the
+[core patterns drill](15-deep-dives/code/core_patterns_drill.py)). Each day: **learn** (read the module, run the lessons), **build** (do the
 exercise without AI help; if stuck for 15 minutes, ask for a hint, not the answer), **explain** (say it
 out loud for 2 minutes as if to the Head of GTM). Tick boxes as you go.
 
@@ -50,6 +52,7 @@ role. So mornings go to call prep, afternoons to Python.
 | Thu 3 Dec | [05-sql](05-sql) lessons 1–3 | SQL exercises 1–10 |
 | Fri 4 Dec | SQL lessons 4–6; [08-data-quality](08-data-quality) | SQL exercises 11–15; run `entity_resolution.py` |
 | Sat 5 Dec | [09-claude-and-ai](09-claude-and-ai) | Get an API key; run `claude_scoring.py --live`; break the prompt and watch validation |
+| Weekend extra | Core patterns drill: all 6 from scratch, then again 2–3 days later | `python 15-deep-dives/code/core_patterns_drill.py` |
 | Sun 6 Dec | [10-production-habits](10-production-habits) | Run the skeleton and tests; schedule something with Task Scheduler |
 
 ## Week 3: put it together and rehearse

@@ -7,7 +7,9 @@ production habits, the tool landscape, systems design, and a script for every in
 It's built for learning by doing: theory as short markdown lessons, code as **runnable, heavily
 commented Python files**, and **exercises that check your answers** (with solutions to compare after).
 
-**Start here:** read this page, then [STUDY_PLAN.md](STUDY_PLAN.md) for the day-by-day plan.
+**Start here:** read this page, then [STUDY_PLAN.md](STUDY_PLAN.md) for the day-by-day plan, and
+[HOW_TO_LEARN_THE_CODE.md](HOW_TO_LEARN_THE_CODE.md) for how to practise (rebuild the 6 core patterns,
+don't memorise code).
 
 ## The modules
 
@@ -51,6 +53,8 @@ Some modules need a second terminal (the local practice API or webhook receiver)
 exactly what to run.
 
 ## How to study each topic
+
+Full method and the 6 core patterns to rebuild: [HOW_TO_LEARN_THE_CODE.md](HOW_TO_LEARN_THE_CODE.md).
 
 1. **Read** the lesson (markdown or the comments in the `.py` file).
 2. **Run** the code and match each printed line to the code that produced it.

@@ -36,6 +36,17 @@ def test_exercise_solution(path):
     assert load(path)._checks() == []
 
 
+def test_core_patterns_solutions():
+    folder = REPO / "15-deep-dives" / "code"
+    sys.path.insert(0, str(folder))
+    try:
+        solutions = load("15-deep-dives/code/core_patterns_solutions.py")
+        results = solutions._checks(solutions)
+    finally:
+        sys.path.remove(str(folder))
+    assert all(status == "pass" for status in results.values()), results
+
+
 def test_live_coding_solutions():
     folder = REPO / "13-interview-prep" / "live_coding_practice"
     sys.path.insert(0, str(folder))
