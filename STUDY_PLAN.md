@@ -14,6 +14,7 @@ role. So mornings go to call prep, afternoons to Python.
 - [ ] [01-gtm-foundations/01](01-gtm-foundations/01-what-gtm-is.md) and [02](01-gtm-foundations/02-icp-personas-buying-committee.md)
 - [ ] Setup: [02-computers-and-setup](02-computers-and-setup) (clone this repo, venv, packages)
 - [ ] Python lessons 1–2 (values, strings)
+- [ ] Read [15-deep-dives/01](15-deep-dives/01-data-types-and-structures.md) (data types and structures) alongside Python lessons 1–4 this week
 
 ### Tue 24 Nov
 - [ ] [01-gtm-foundations/03–05](01-gtm-foundations): signals, scoring, routing
@@ -43,7 +44,7 @@ role. So mornings go to call prep, afternoons to Python.
 
 | Day | Learn | Build |
 | --- | --- | --- |
-| Mon 30 Nov | pandas lessons 4–5 | [pandas exercise](04-pandas/exercises/ex01_clean_score.py) |
+| Mon 30 Nov | pandas lessons 4–5; [15-deep-dives/02](15-deep-dives/02-json-apis-and-pandas.md) (JSON, APIs, pandas) | [pandas exercise](04-pandas/exercises/ex01_clean_score.py) |
 | Tue 1 Dec | [06-apis](06-apis-and-webhooks) theory 1–3, lessons 1–3 | [API exercise](06-apis-and-webhooks/exercises/ex01_api_client.py) |
 | Wed 2 Dec | Webhooks theory 4, lessons 4–5; [07-crm-hubspot](07-crm-hubspot) | Free HubSpot account + service key; run `hubspot_client.py` twice |
 | Thu 3 Dec | [05-sql](05-sql) lessons 1–3 | SQL exercises 1–10 |

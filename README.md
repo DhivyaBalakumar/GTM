@@ -27,7 +27,8 @@ commented Python files**, and **exercises that check your answers** (with soluti
 | 11 | [GTM tools and integrations](11-gtm-tools-and-integrations) | Know Clay, Apollo, n8n, outreach tools, warehouses and reverse ETL; decide code vs no-code | Read |
 | 12 | [Systems thinking](12-systems-thinking) | Design account pipelines, signal alerts, inbound routing and AI assistants; failure modes; 10x; prioritisation; first 90 days | Read |
 | 13 | [Interview prep](13-interview-prep) | Scripts and practice for the intro call, take-home, live coding (12 checked problems) and final round | Read + practise |
-| 14 | [Cheat sheets](14-cheatsheets) | Python, pandas, SQL, HTTP, Git, cron and a glossary on a few pages | Reference |
+| 14 | [Cheat sheets](14-cheatsheets) | Python, pandas, SQL, HTTP, Git, cron, data types and structures, and a glossary on a few pages | Reference |
+| 15 | [Deep dives](15-deep-dives) | Long, very explanatory guides: data types and data structures; JSON, APIs and pandas and how this role uses them; each with runnable companion code | Read + code |
 
 Sample data used by the lessons lives in [data/](data) (messy leads with deliberate traps, CRM accounts,
 contacts, deals, inbound leads, an API response and webhook events).
