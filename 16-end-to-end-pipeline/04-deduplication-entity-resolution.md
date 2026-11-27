@@ -7,6 +7,43 @@ Duplicates cause: two reps emailing the same CTO, broken scores (signals split o
 inflated pipeline reports and wasted enrichment credits. Full theory, level by level:
 [15-deep-dives/03-deduplication.md](../15-deep-dives/03-deduplication.md).
 
+## 4.0 Start from zero
+
+**A duplicate** = two or more records describing the same real person or company.
+
+**Where they come from:** the same CTO is in Apollo *and* registered for your webinar *and* already in
+the CRM. Three sources, one person.
+
+**Why they hurt:**
+
+| Problem | Example |
+| --- | --- |
+| Embarrassment | Two reps email the same CTO on the same day |
+| Wrong scores | The funding signal sits on record A, the job post on record B: neither scores high |
+| Wasted money | You pay to enrich the same company twice |
+| Wrong reports | "We have 1,200 target accounts" when it's 900 |
+
+**The three levels:**
+
+1. **Exact**: same key after normalising (`anna@peopleco.de` twice).
+2. **Fuzzy**: similar text ("Nordbanc Tech" ≈ "Nordbank Tech", similarity 0.92; "Nordbank Tech B.V." vs "NORDBANK TECH" becomes 1.0 once the match key drops case and the legal suffix).
+3. **Entity resolution**: combining clues (name + country + city + domain) to decide, with a human
+   for borderline cases.
+
+**What "similarity 0.0–1.0" means:** a score of how much two strings overlap. `difflib.SequenceMatcher`
+and `rapidfuzz` compute it. 1.0 = identical, 0.5 = half the characters line up.
+
+```python
+from difflib import SequenceMatcher
+SequenceMatcher(None, "nordbank tech", "nordbank tech").ratio()      # 1.0
+SequenceMatcher(None, "nordbank tech", "nordbanc tech").ratio()      # ~0.92
+SequenceMatcher(None, "nordbank tech", "nordic bank").ratio()        # ~0.67
+```
+
+**Merge, don't delete:** when two records are the same, you don't throw one away. You build one
+**golden record** taking the best value of each field (**survivorship**) and remember where each
+value came from (**lineage**).
+
 ## 4.1 Tools
 
 | Tool | What it does | Click or code |
@@ -169,3 +206,51 @@ engineer finds on day one.
 > has no key, within blocks like same country, auto-merge only above 0.9 and send 0.75–0.9 to human
 > review, because a false merge is worse than a missed duplicate. Survivorship is field by field with
 > lineage, and human edits in the CRM always beat provider data."
+
+## 4.7 Summary
+
+- Keys: **email** for contacts, **domain** for companies (normalised first).
+- **Exact match first**, fuzzy only what has no key, **inside blocks** (same country).
+- Thresholds: **≥ 0.90 auto-merge, 0.75–0.90 human review, < 0.75 different**. A false merge is worse
+  than a missed duplicate.
+- **Cluster** chains of matches with union-find.
+- **Survivorship field by field** with lineage; human CRM edits beat providers.
+- Dedupe **against the CRM** too, and report duplicates already inside it.
+
+## 4.8 Key functions to remember
+
+| Function | Input → output |
+| --- | --- |
+| `name_key(name)` | `"PeopleCo GmbH"` → `"peopleco"` (match key) |
+| `similarity(a, b)` | two names → 0.0–1.0 |
+| `completeness(rec, fields)` | record → number of filled fields |
+| `survivorship(records, fields)` | duplicate group → golden record + `sources` + `lineage` |
+| `dedupe(cleaned, crm_companies)` | clean rows + CRM → `contacts, accounts, review, crm_dupes` |
+| `find` / `union` | ids → cluster representative (union-find) |
+
+## 4.9 Important logic
+
+| Case | Decision |
+| --- | --- |
+| Same normalised email | Same contact |
+| Same normalised domain | Same company |
+| No domain, same country, name similarity ≥ 0.90 | Auto-merge into that company |
+| No domain, same country, 0.75–0.90 | Human review list |
+| Different countries | Never fuzzy-merge |
+| Two values conflict | Source priority (`crm > apollo > clay > webinar > website`), then completeness; human edit always wins |
+| Same domain twice inside the CRM | Report as CRM duplicate; merge in the CRM |
+
+## 4.10 Check yourself
+
+1. Why not use company name as the account key?
+2. What does blocking save, and what's the risk if the block is too narrow?
+3. A merges with B (0.93), B merges with C (0.91). What does union-find conclude about A and C?
+4. Which wins for `jobtitle`: a rep's edit in the CRM last month, or Apollo's value today? Why?
+
+<details><summary>Answers</summary>
+
+1. Many spellings and legal suffixes; different companies can share names.
+2. It saves comparisons (n² → small groups); too narrow and true duplicates land in different blocks and are missed.
+3. A, B and C are one cluster (one entity).
+4. Usually the human edit (field ownership), unless your rule says "newest wins for titles" and Apollo's data is verified newer; whatever the rule, write it down in config.
+</details>

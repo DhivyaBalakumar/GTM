@@ -6,6 +6,34 @@ again changes nothing that didn't change.
 
 Deep dive on HubSpot's API: [07-crm-hubspot/02-hubspot-api.md](../07-crm-hubspot/02-hubspot-api.md).
 
+## 8.0 Start from zero
+
+**Write-back** = putting the pipeline's results into the CRM, where reps actually work. It's the
+riskiest step: a bug here doesn't just produce a wrong file, it changes what every rep sees.
+
+**Three ways to write a record:**
+
+| Operation | What happens if the record already exists | Risk |
+| --- | --- | --- |
+| **Create** | A second copy is made | Duplicates on every run |
+| **Update** | It changes (but you need the CRM's id first) | Needs a lookup; fails for new records |
+| **Upsert** | Matched by a unique key: update if found, create if not | Safe to re-run ✔ |
+
+**Field ownership, from zero:** every field has an owner:
+
+| Owner | Fields | Pipeline may... |
+| --- | --- | --- |
+| Pipeline | `gtm_score`, `gtm_tier`, `gtm_score_reasons`, `gtm_segment`, `gtm_signals` | always write |
+| Shared | `industry`, `numberofemployees`, `country` | fill if empty |
+| Humans | `hubspot_owner_id` (once set), `lifecyclestage`, notes | never write |
+
+**"Never send blanks", from zero:** in most CRM APIs, sending `"industry": ""` sets the field to
+empty. If your provider didn't know the industry but a rep had typed it, you just erased it. So
+payloads only include fields that have a value.
+
+**Associations, from zero:** links between records. A contact without a link to its company doesn't
+show up on the company page, so the rep never sees them.
+
 ## 8.1 Tools
 
 | Tool | Way | Notes |
@@ -167,3 +195,49 @@ an existing `hubspot_owner_id`.
 > batches of 100 through the retry function. The pipeline only writes fields it owns, never blanks,
 > never the owner of an existing record. I diff before sending, log created vs updated, and alert if
 > creates spike on a re-run, because that means a key broke."
+
+## 8.7 Summary
+
+- **Upsert by a unique property** (domain, email): re-runs update, never duplicate.
+- **Only owned fields, never blanks, never steal owners.** Diff to skip unchanged records.
+- Companies first, then contacts, then **associations**; batches ≤ 100 through retry.
+- **Dry run** first; log **created vs updated**; alert if creates spike on a re-run.
+- Handle **partial failures** per record.
+
+## 8.8 Key functions to remember
+
+| Function | Input → output |
+| --- | --- |
+| `to_payloads(scored, accounts)` (demo) | results → `(company_inputs, contact_inputs)`, blanks removed |
+| `company_payload(account, existing)` | one account + current CRM values → upsert input respecting ownership |
+| `write_back(crm, companies, contacts, dry_run)` (demo) | payloads → `{created, updated}` totals |
+| `FakeCRM.batch_upsert(object_type, inputs)` (demo) | ≤100 inputs → `{created, updated}`; keeps existing owners |
+| `upsert(object_type, inputs)` | real HubSpot batch upsert with error logging |
+| `fingerprint(props)` | properties → hash, to skip unchanged records |
+
+## 8.9 Important logic
+
+| Field case | Write? |
+| --- | --- |
+| Value is blank | No |
+| Field in `NEVER` (owner on an owned record, lifecycle, notes) | No |
+| Pipeline-owned field | Yes |
+| Shared field, CRM empty | Yes (fill) |
+| Shared field, CRM has a value | No |
+| Owner, CRM record has no owner | Yes (set) |
+| Fingerprint unchanged since last write | Skip the record |
+
+## 8.10 Check yourself
+
+1. Why is "search, then create if not found" not enough to prevent duplicates?
+2. What would sending `"numberofemployees": ""` do?
+3. Your second run reports 400 created. What do you suspect?
+4. Why write companies before contacts?
+
+<details><summary>Answers</summary>
+
+1. The search index lags behind writes, so two close runs can both "not find" and both create.
+2. It would blank the field in the CRM, erasing a correct value.
+3. The upsert key broke (e.g. domains no longer normalised, or the unique property changed).
+4. Contacts need the company to exist so they can be associated to it.
+</details>

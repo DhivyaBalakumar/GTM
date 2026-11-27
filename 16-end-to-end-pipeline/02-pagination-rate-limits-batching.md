@@ -4,6 +4,33 @@ APIs never give you 50,000 rows in one response, never let you call as fast as y
 sometimes fail for no reason. This chapter is the "plumbing" that makes collection (step 1) and
 write-back (step 9) reliable. Interviewers ask about it constantly.
 
+## 2.0 Start from zero
+
+These are the three facts of life of every API:
+
+1. **It answers in pages** (pagination). You must keep asking for the next page.
+2. **It has a speed limit** (rate limit). Go too fast and it says 429 "slow down".
+3. **It sometimes fails for no reason** (timeouts, 500s). Usually it works if you try again a bit later.
+
+And one way to be efficient: **send many records per call** (batching).
+
+| Idea | One-line picture |
+| --- | --- |
+| Pagination | Reading a long catalogue one page at a time, following "continued on page 2" |
+| Rate limit | A coffee shop that serves 10 people per minute |
+| Backoff | Waiting 1 s, then 2 s, then 4 s before trying again |
+| Jitter | Adding a random few hundred milliseconds so everyone doesn't retry together |
+| Batching | Posting 100 letters in one parcel |
+| Checkpoint | A bookmark so a crash resumes instead of restarting |
+| Idempotency | Pressing the lift button twice doesn't call two lifts |
+
+**Why this chapter decides whether a pipeline is "real":** the logic of scoring is easy. What breaks in
+production is the plumbing: the sync that silently stopped after page 1, the run that died on one
+429, the retry that created a duplicate. Interviewers probe exactly here.
+
+**How to read the code:** every snippet is one of the 6 core patterns (normalise, dedupe, retry,
+paginate, batch, per-record errors), see [chapter 15](15-the-6-core-patterns-in-the-pipeline.md).
+
 ## 2.1 Pagination: the four styles
 
 | Style | How you ask | How you know there's more | Who uses it | Gotcha |
@@ -229,3 +256,51 @@ a real one, so you can test all of this for real.
 
 > "Long pulls checkpoint after each page so a crash resumes instead of restarting, and enrichment
 > has a credit budget per run."
+
+## 2.8 Summary
+
+- Know the four pagination styles; **always loop until there's no next page**, and slice queries that
+  hit hard caps.
+- **Throttle proactively, retry reactively**: exponential backoff + jitter, obey `Retry-After`, only
+  retry 429/5xx/network errors, cap attempts.
+- **Batch** writes and enrichment (HubSpot 100, Apollo 10); handle partial failures per record.
+- Long pulls **checkpoint**; enrichment has a **credit budget**.
+- Retried *writes* must be idempotent (upserts), or a lost response becomes a duplicate.
+
+## 2.9 Key functions to remember
+
+| Function | Input → output | Core pattern |
+| --- | --- | --- |
+| `fetch_all_pages(fetch_page)` / `fetch_all_pages_page_number` | page fetcher → generator of records | 4 pagination |
+| `fetch_all_companies` / `fetch_all_pages_cursor` | session → generator of records | 4 pagination |
+| `call_with_retry(make_request)` | a zero-argument function → its result, or a clear error | 3 retry |
+| `Throttle(rate).wait()` | — → sleeps just enough | (proactive limit) |
+| `chunks(items, size)` / `batches` | list → list slices | 5 batching |
+
+## 2.10 Important logic
+
+| Response | Retry? | Why |
+| --- | --- | --- |
+| 200/201/204 | No, done | Success |
+| 400, 422 | No | Your payload is wrong; it fails every time |
+| 401, 403 | No | Key or permission problem; alert a human |
+| 404 | No (enrichment: treat as "no data") | Doesn't exist |
+| 409 | No; switch to upsert | Duplicate unique value |
+| 429 | **Yes**, wait `Retry-After` or backoff | Temporary |
+| 500/502/503/504, timeout, connection error | **Yes**, with backoff | Usually temporary |
+| Still failing after max attempts | Stop, raise, alert | Don't loop forever |
+
+## 2.11 Check yourself
+
+1. Your HubSpot sync always ends with exactly 100 companies. What's the bug?
+2. Why add jitter if you already have exponential backoff?
+3. A POST create timed out and you retried it. What could go wrong, and how do you prevent it?
+4. 120,000 people match a search capped at 50,000. What do you do?
+
+<details><summary>Answers</summary>
+
+1. It reads only the first page and never follows `paging.next.after`.
+2. Many workers that failed together would otherwise retry at the same instants and collide again.
+3. The first call may have succeeded; the retry creates a duplicate. Use upsert by a unique key (or an idempotency key).
+4. Split into slices under the cap (country × size band), pull each, then dedupe the union.
+</details>

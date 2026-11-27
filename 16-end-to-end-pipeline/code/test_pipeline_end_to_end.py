@@ -19,7 +19,8 @@ def test_normalisers():
 
 def test_title_classifier_edge_cases():
     assert p.classify_title("Software Engineer Intern")[0] == "junior"
-    assert p.classify_title("Product Owner")[0] != "c_level"
+    assert p.classify_title("Product Owner") == ("ic", "other")
+    assert p.classify_title("Owner") == ("c_level", "executive")
     assert p.classify_title("Chief Technology Officer") == ("c_level", "engineering")
     assert p.classify_title("CISO") == ("c_level", "security")
 
@@ -47,3 +48,44 @@ def test_full_run_and_idempotency():
     report2, _, _ = p.run(crm=crm, cache=cache, verbose=False)
     assert report2["crm"]["contacts_created"] == 0 and report2["crm"]["companies_created"] == 0
     assert report2["credits_used"] == 0                           # cache: never pay twice
+
+
+def test_per_record_error_handling():
+    def process(key, rec):
+        if rec == "bad":
+            raise ValueError("broken")
+        return rec.upper()
+
+    ok, failed, summary = p.process_all([("a", "x"), ("b", "bad"), ("c", "y")], process, "t")
+    assert ok == ["X", "Y"] and failed[0]["key"] == "b"
+    assert summary["alert"] is True                               # 1/3 > 10%
+
+
+def test_enrich_failure_does_not_stop_run():
+    report, _, _ = p.run(verbose=False)
+    assert [f["key"] for f in report["enrich_failures"]] == ["greenleafretail.com"]
+
+
+def test_drill_solutions_pass_and_drill_starts_as_todo():
+    sys.path.insert(0, str(HERE))
+    import pipeline_drill_checks
+
+    def load(name):
+        s = importlib.util.spec_from_file_location(name, HERE / f"{name}.py")
+        m = importlib.util.module_from_spec(s)
+        s.loader.exec_module(m)
+        return m
+
+    solutions = pipeline_drill_checks.run(load("pipeline_drill_solutions"))
+    assert all(v == "pass" for v in solutions.values()), solutions
+    drill = pipeline_drill_checks.run(load("pipeline_drill"))
+    assert all(v in ("todo", "pass") for v in drill.values()), drill
+
+
+def test_summarize_demo_validation_catches_invented_number():
+    s = importlib.util.spec_from_file_location("summarize_demo", HERE / "summarize_demo.py")
+    sd = importlib.util.module_from_spec(s)
+    s.loader.exec_module(sd)
+    assert sd.account_brief(sd.fake_model)["problems"] == []
+    res = sd.map_reduce_summary(sd.fake_model, sd.CALL_NOTES)
+    assert any("50000" in prob for prob in res["problems"])

@@ -7,6 +7,33 @@ back into the CRM.
 **House rule in this repo: the pipeline drafts, a human approves and sends.** Nothing here sends
 email on anyone's behalf.
 
+## 9.0 Start from zero
+
+**A sequence (cadence)** = a planned series of touches over days: email, LinkedIn, call. If someone
+replies, books a meeting or unsubscribes, they leave the sequence automatically.
+
+**Why multi-step:** most replies come after the first email, and different people prefer different
+channels.
+
+**Personalisation, from zero:** one line that proves you looked at *them*, ideally from a real signal
+("congrats on the seed round"). The rest of the email comes from the segment template.
+
+**Deliverability, from zero:** whether your email lands in the inbox or spam. Mail providers judge your
+*sending domain's reputation*: too many bounces, spam complaints or sudden volume spikes and
+everything you send goes to spam, including the good emails.
+
+| Term | Plain meaning |
+| --- | --- |
+| SPF | A DNS record listing which servers may send mail for your domain |
+| DKIM | A digital signature on each email proving it wasn't altered |
+| DMARC | Your policy for what receivers should do if SPF/DKIM fail, plus reports |
+| Warm-up | Gradually increasing volume on a new inbox |
+| Bounce | Email rejected (hard = address doesn't exist) |
+| Spam rate | % of recipients who mark you as spam |
+
+**Drafts vs sends:** in this repo the pipeline writes **drafts**; a human approves before anything
+goes out. That's the safe default for any AI-written message.
+
 ## 9.1 Tools
 
 | Tool | What it's for | Click or code |
@@ -138,3 +165,45 @@ In the demo: `draft_first_touch()` writes template-based drafts for A/B contacts
 
 > "Deliverability is infrastructure: separate sending domains, SPF/DKIM/DMARC, warm-up, low daily
 > volume per inbox, verified emails only."
+
+## 9.7 Summary
+
+- Who enters: tier A/B, not suppressed, verified email, owner assigned.
+- **Segment → template, signal → first line, tier → channel mix.**
+- **Claude drafts from facts you pass in**, returns JSON you validate; a human approves.
+- **Deliverability** is infrastructure: separate domains, SPF/DKIM/DMARC, warm-up, low daily volume,
+  verified emails, one-click unsubscribe.
+- Replies, bounces and unsubscribes sync back by webhook; unsubscribes suppress everywhere.
+
+## 9.8 Key functions to remember
+
+| Function | Input → output |
+| --- | --- |
+| `draft_first_touch(c, acc)` (demo) | contact + account → draft dict, status "needs approval" |
+| `draft(contact, account, segment_template)` | facts → Claude JSON, validated (length, trigger) |
+| `outreach_event()` (Flask) | reply/bounce webhook → CRM log, suppression, Slack |
+| `classify_reply(text)` | reply text → `interested / not_now / wrong_person / unsubscribe / ooo` |
+
+## 9.9 Important logic
+
+| Reply type | Action |
+| --- | --- |
+| Interested | Stop sequence, alert owner, suggest times |
+| Not now | Stop, set a follow-up task in N months |
+| Wrong person | Stop, ask for/find the right contact |
+| Unsubscribe | Stop everywhere, add to suppression permanently |
+| Out of office | Pause, resume after return date |
+| Hard bounce | Mark invalid, remove from all sequences |
+
+## 9.10 Check yourself
+
+1. Why send cold email from a separate domain?
+2. Name two checks you'd run on a Claude-written draft before showing it to a rep.
+3. Bounce rate jumped to 6%. Which earlier step probably failed?
+
+<details><summary>Answers</summary>
+
+1. To protect the main domain's reputation (and normal company email) if the cold domain gets flagged.
+2. Length limit; trigger used is one of the supplied signals; no invented numbers/names; required fields present.
+3. Email verification (or a new, worse data source / guessed emails used without verifying).
+</details>

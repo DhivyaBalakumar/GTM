@@ -25,6 +25,14 @@ Read alongside 16-end-to-end-pipeline/README.md. Each STEP below matches one cha
     STEP 9  CRM write-back chapter 08        (batch upsert by unique key, field ownership)
     STEP 10 Outreach       chapter 09        (draft-only sequence enrolments)
     STEP 11 Report         chapter 11 + 12   (counts, fill rates, credits, quality checks)
+
+The 6 core patterns (HOW_TO_LEARN_THE_CODE.md) all run here; chapter 15 maps each one:
+    1 normalise    -> normalise_domain, normalise_country, parse_employees, classify_title
+    2 dedupe       -> dedupe, survivorship
+    3 retry        -> call_with_retry
+    4 pagination   -> fetch_all_pages_page_number, fetch_all_pages_cursor
+    5 batching     -> batches, write_back
+    6 per-record error handling -> process_all (used by the map and enrich steps)
 """
 from __future__ import annotations
 
@@ -297,7 +305,8 @@ def classify_title(title):
         function = "engineering"
     elif re.search(r"\b(it|cio)\b", t):
         function = "it"
-    elif re.search(r"\b(ceo|coo|founder|owner|chief executive|chief operating)\b", t):
+    elif re.search(r"\b(ceo|coo|founder|chief executive|chief operating)\b", t) or \
+            (re.search(r"\bowner\b", t) and "product owner" not in t):     # "Product Owner" is not an exec
         function = "executive"
     elif re.search(r"\b(cfo|finance)\b", t):
         function = "finance"
@@ -438,12 +447,15 @@ def dedupe(cleaned, crm_companies):
 # STEP 4: ENRICH  (chapter 05)
 # =============================================================================================== #
 class FakeProvider:
-    """One enrichment provider: costs credits only when it returns data (like Apollo/Clay)."""
+    """One enrichment provider: costs credits only when it returns data (like Apollo/Clay).
+    `broken` domains make it raise, like a real API returning a malformed body for one record."""
 
-    def __init__(self, name, data, cost):
-        self.name, self.data, self.cost = name, data, cost
+    def __init__(self, name, data, cost, broken=()):
+        self.name, self.data, self.cost, self.broken = name, data, cost, set(broken)
 
     def lookup(self, domain):
+        if domain in self.broken:
+            raise ValueError(f"{self.name}: malformed response for {domain}")
         return self.data.get(domain)
 
 
@@ -459,40 +471,63 @@ PROVIDER_B = FakeProvider("provider_b", {           # expensive, better coverage
     "opalanalytics.de": {"signals": ["funding_seed"]},
     "vektorcloud.nl": {"signals": ["hiring_security"]},
     "kitelabs.io": {"employees": 9},
-}, cost=3)
+}, cost=3, broken={"greenleafretail.com"})
 WATERFALL = [PROVIDER_A, PROVIDER_B]
 ENRICH_FIELDS = ["company", "country", "employees", "industry"]
 
 
-def enrich(accounts, cache, budget):
-    used, stats = 0, Counter()
-    for d, acc in accounts.items():
-        acc.setdefault("signals", [])
-        missing = [f for f in ENRICH_FIELDS if blank(acc.get(f))]
-        for provider in WATERFALL:
-            key = (provider.name, d)
-            if key in cache:                                   # never pay twice for the same lookup
-                hit = cache[key]
-                stats["cache_hits"] += 1
-            else:
-                if used + provider.cost > budget:
-                    stats["skipped_budget"] += 1
-                    break
-                hit = provider.lookup(d)
-                cache[key] = hit
-                if hit:
-                    used += provider.cost                      # pay only when data comes back
-                    stats[f"{provider.name}_hits"] += 1
-            if hit:
-                for f in list(missing):
-                    if not blank(hit.get(f)):
-                        acc[f] = hit[f]
-                        acc["lineage"][f] = provider.name
-                        missing.remove(f)
-                acc["signals"] = sorted(set(acc["signals"]) | set(hit.get("signals", [])))
-            if not missing and provider is WATERFALL[-1]:
+def process_all(records, process, label, max_fail_rate=0.10):
+    """Core pattern 6: per-record error handling. One bad record must not stop the others,
+    but every failure is recorded (which record, why) and a high failure rate raises an alert."""
+    ok, failed = [], []
+    for key, rec in records:
+        try:
+            ok.append(process(key, rec))
+        except Exception as e:                                  # noqa: BLE001 - we log and continue
+            failed.append({"key": key, "error": f"{e.__class__.__name__}: {e}"})
+    rate = len(failed) / len(records) if records else 0
+    alert = rate > max_fail_rate
+    return ok, failed, {"step": label, "ok": len(ok), "failed": len(failed),
+                        "fail_rate": round(rate, 3), "alert": alert}
+
+
+def enrich_one(domain, acc, cache, budget_state, stats):
+    """Waterfall for ONE account: cache -> budget check -> provider -> fill only missing fields."""
+    acc.setdefault("signals", [])
+    missing = [f for f in ENRICH_FIELDS if blank(acc.get(f))]
+    for provider in WATERFALL:
+        key = (provider.name, domain)
+        if key in cache:                                   # never pay twice for the same lookup
+            hit = cache[key]
+            stats["cache_hits"] += 1
+        else:
+            if budget_state["used"] + provider.cost > budget_state["budget"]:
+                stats["skipped_budget"] += 1
                 break
-    return used, stats
+            hit = provider.lookup(domain)                  # may raise -> handled by process_all
+            cache[key] = hit                               # cache misses too (None)
+            if hit:
+                budget_state["used"] += provider.cost      # pay only when data comes back
+                stats[f"{provider.name}_hits"] += 1
+        if hit:
+            for f in list(missing):
+                if not blank(hit.get(f)):
+                    acc[f] = hit[f]
+                    acc["lineage"][f] = provider.name
+                    missing.remove(f)
+            acc["signals"] = sorted(set(acc["signals"]) | set(hit.get("signals", [])))
+        # We keep going to the last provider even when nothing is missing, because it is also
+        # our signal source. A pure firmographic waterfall would `break` as soon as missing == [].
+    return domain
+
+
+def enrich(accounts, cache, budget):
+    budget_state, stats = {"used": 0, "budget": budget}, Counter()
+    _, failed, summary = process_all(
+        list(accounts.items()),
+        lambda d, acc: enrich_one(d, acc, cache, budget_state, stats), "enrich")
+    stats["failed"] = len(failed)
+    return budget_state["used"], stats, failed, summary
 
 
 def guess_email_patterns(first, last, domain):
@@ -713,7 +748,11 @@ def run(crm=None, cache=None, verbose=True):
         f"{cstats['apollo_pages']} pages, {cstats['retries']} retries after 429s")
     say(f"hubspot api (cursor pagination): {len(raw['crm_companies'])} companies over {cstats['crm_pages']} pages")
     say(f"files (clay export, webinar list, website forms): {len(raw['files'])} rows")
-    mapped = [map_apollo(p) for p in raw["apollo_api"]] + [map_file(r) for r in raw["files"]]
+    items = [(f"apollo:{p['id']}", ("apollo", p)) for p in raw["apollo_api"]] + \
+            [(f"file:{i}", ("file", r)) for i, r in enumerate(raw["files"])]
+    mapped, map_failed, map_summary = process_all(
+        items, lambda k, x: map_apollo(x[1]) if x[0] == "apollo" else map_file(x[1]), "map")
+    say(f"mapping: {map_summary}")
     report["collected"] = len(mapped)
 
     say("\n=== STEP 2: Map to one schema, clean, validate ===")
@@ -734,11 +773,15 @@ def run(crm=None, cache=None, verbose=True):
 
     say("\n=== STEP 4: Enrich (waterfall, cache, credit budget) ===")
     before = {f: sum(not blank(a.get(f)) for a in accounts.values()) for f in ENRICH_FIELDS}
-    used, estats = enrich(accounts, cache, CONFIG["credit_budget"])
+    used, estats, efailed, esummary = enrich(accounts, cache, CONFIG["credit_budget"])
     after = {f: sum(not blank(a.get(f)) for a in accounts.values()) for f in ENRICH_FIELDS}
     for f in ENRICH_FIELDS:
         say(f"  {f:10} filled {before[f]:>2} -> {after[f]:>2} of {len(accounts)}")
     say(f"credits used: {used}/{CONFIG['credit_budget']} | {dict(estats)}")
+    for f in efailed:
+        say(f"  enrichment failed for {f['key']}: {f['error']} (logged, run continues, retried next run)")
+    say(f"  per-record summary: {esummary}")
+    report["enrich_failures"] = efailed
     for c in contacts:                                       # push account data back onto contacts
         a = accounts.get(c["domain"])
         if a:

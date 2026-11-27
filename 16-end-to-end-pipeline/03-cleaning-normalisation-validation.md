@@ -6,6 +6,43 @@ thing is always written the same way, and every row that can't be trusted is set
 Dedupe, scoring and routing all compare values. If one row says `Germany` and another `DE`, or one
 says `https://www.PeopleCo.de/about` and another `peopleco.de`, every later step quietly breaks.
 
+## 3.0 Start from zero
+
+**Cleaning** = making data consistent and trustworthy before anyone uses it. It has four parts:
+
+| Part | Plain meaning | Example |
+| --- | --- | --- |
+| **Mapping** | Rename fields so every source uses the same names | `Work Email` → `email` |
+| **Normalising** | Write the same value the same way | `Germany` → `DE` |
+| **Deriving** | Work out new fields from existing ones | `CTO` → seniority `c_level`, function `engineering` |
+| **Validating** | Check rules; set aside what fails | `max@gmail.com`, title `Student` → quarantine |
+
+**Why it comes before everything else:** computers compare exactly. `"DE" == "Germany"` is `False`.
+If you dedupe or score before normalising, two records for the same company look different, and a
+German company looks "not in target countries".
+
+**Regular expressions (regex), from zero:** a tiny language for patterns in text.
+
+| Pattern | Means | Matches |
+| --- | --- | --- |
+| `^` / `$` | start / end of the text | |
+| `\d+` | one or more digits | `120` |
+| `(\d+)\s*-\s*(\d+)` | digits, optional spaces, dash, digits (two groups) | `51-200`, `51 - 200` |
+| `^https?://` | `http://` or `https://` at the start | |
+| `\b(cto\|ciso)\b` | the whole word cto or ciso | `CTO`, not `doctor` |
+| `[A-Za-z0-9._%+-]+@...` | an email shape | |
+
+```python
+import re
+re.sub(r"^https?://", "", "https://peopleco.de")       # 'peopleco.de'
+re.fullmatch(r"(\d+)\s*-\s*(\d+)", "51-200").groups()   # ('51', '200')
+bool(re.search(r"\b(cto|ciso)\b", "cto & co-founder")) # True
+```
+
+**Personal vs work vs role email:** `anna@peopleco.de` is a work email (domain = company).
+`max@gmail.com` is personal (domain tells you nothing about the employer). `info@corvex.de` is a role
+inbox (a shared mailbox, not a person).
+
 ## 3.1 Tools
 
 | Tool | Used for | Click or code |
@@ -200,3 +237,50 @@ Schmidt's company domain `kranich-logistik.de` from her work email because her r
 > "I map every source into one schema first, then normalise per field type: domain is the most
 > important because it's the account key. I keep display values and match keys separate, and bad rows
 > go to a quarantine file with reasons, so we can fix the source instead of losing leads."
+
+## 3.8 Summary
+
+- **Map** every source into one schema and keep `source` on every row.
+- **Normalise per field type**: domain (most important, it's the account key), email, names, country
+  (ISO-2), employees (number), industry (your vocabulary), phone (E.164), dates (ISO).
+- **Derive** domain-from-work-email, seniority, function, personal/role flags.
+- **Validate** with explicit rules, collect all reasons, **quarantine** instead of deleting.
+- Keep display values and match keys separate; measure failure rates per source.
+
+## 3.9 Key functions to remember
+
+| Function | Input → output | Edge cases it handles |
+| --- | --- | --- |
+| `map_apollo(p)` / `map_file(r)` | source-shaped dict → common schema dict | missing nested `organization` |
+| `normalise_domain(v)` | URL/email/domain → `peopleco.de` or `None` | `www.`, `https`, paths, `?query`, emails, blanks |
+| `normalise_country(v)` | name/code → ISO-2 | aliases, lowercase codes, unknown → `None` |
+| `parse_employees(v)` | `"120"`, `"51-200"`, `"abc"` → `120`, `125`, `None` | commas, ranges, junk |
+| `clean_person_name(v)` | `"Dr. Eva"` → `"Eva"` | titles |
+| `classify_title(t)` | title → `(seniority, function)` | interns first, "Product Owner" ≠ owner |
+| `clean_and_validate(records)` | mapped rows → `(clean, quarantine)` | collects all reasons per row |
+
+## 3.10 Important logic
+
+| Rule | Why |
+| --- | --- |
+| No website but a **work** email → domain = email domain | Recovers the account key (Julia @ kranich-logistik.de) |
+| Personal email **and** no company → quarantine | Can't tie them to an account |
+| Junior / student / freelancer → quarantine as `not_a_buyer` | Never a buyer, protects reps' time |
+| Check junior keywords **before** role keywords | "Software Engineer Intern" must be junior |
+| Unknown country → `None`, not a guess | A wrong value is worse than a blank |
+| Never `.title()` names blindly | `McDonald`, `O'Brien`, `Hans-Peter` |
+
+## 3.11 Check yourself
+
+1. Write the domain for: `HTTPS://www.Vektorcloud.NL/de/about?ref=x`.
+2. Why quarantine instead of `drop`?
+3. Why must the intern check come first in `classify_title`?
+4. Pandas read `0049301234` as `49301234.0`. What setting prevents that?
+
+<details><summary>Answers</summary>
+
+1. `vektorcloud.nl`
+2. So the source can be fixed and the leads aren't silently lost; you can also measure failure rates.
+3. Otherwise "engineer" or "manager" matches first and an intern gets buyer points.
+4. `pd.read_csv(..., dtype=str)` (and `keep_default_na=False`).
+</details>

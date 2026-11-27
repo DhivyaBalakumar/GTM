@@ -4,6 +4,25 @@ The pipeline isn't finished when data reaches the CRM. You need to know **whethe
 A-tier leads book more meetings? which source produces pipeline?) and feed that back into the ICP,
 the scores and the sequences.
 
+## 12.0 Start from zero
+
+**Reporting** answers two different questions, and you need both:
+
+1. **Is the machine healthy?** (did it run, how many rows, how many failed, how many credits)
+2. **Is the machine useful?** (do high scores become meetings, which sources make pipeline)
+
+**Conversion rate, from zero:** `next stage ÷ previous stage`. 60 replies from 1,000 contacted = 6%.
+
+**Funnel, from zero:** the stages people pass through (contacted → replied → meeting → deal → won)
+with counts at each, so you see where they drop.
+
+**Feedback loop, from zero:** using outcomes to change the inputs. If tier A doesn't book more
+meetings than tier B, the score is wrong, so you change the weights in config and re-score.
+
+**Summarising data, from zero:** turning many rows into a few numbers: *count*, *sum*, *average*,
+*rate*, grouped by something (tier, source, segment). In pandas that's `groupby(...).agg(...)`, in SQL
+`GROUP BY`. Full chapter: [17-summarizing-data-and-text.md](17-summarizing-data-and-text.md).
+
 ## 12.1 Tools
 
 | Tool | Role | Click or code |
@@ -115,3 +134,45 @@ reasons, CRM created/updated, credits, checks), `scored_contacts.csv`, `quaranti
 > "I report two things: is the machine healthy (rows, quarantine rate, duplicates, credits, run
 > success) and is it working (meeting and win rate by tier, source and segment). If tier A doesn't
 > beat tier B on meeting rate, the weights are wrong, so the score gets recalibrated, not defended."
+
+## 12.6 Summary
+
+- Report **health** (rows, quarantine, duplicates, fill rates, credits, run success) and
+  **usefulness** (meeting/win rate by tier, source, segment; speed-to-lead).
+- Data flows CRM/tools → **warehouse** → SQL/dbt models → dashboards, and back to the CRM via
+  **reverse ETL**.
+- **Close the loop**: recalibrate weights, ICP and sequences from outcomes; test copy changes with
+  significance, not gut feel.
+
+## 12.7 Key functions / queries to remember
+
+| Function / query | Output |
+| --- | --- |
+| Funnel by source (SQL `GROUP BY` + `FILTER`) | leads, replies, meetings, rate, won € per source |
+| `df.groupby("gtm_tier").agg(...)` | meeting and win rate per tier |
+| `proportions_ztest(replies, sends)` | p-value for an A/B test |
+| `run_report.json` history → DataFrame | pipeline health over time |
+| dbt `mart_account_scores` | tested account score table |
+
+## 12.8 Important logic
+
+| Finding | Action |
+| --- | --- |
+| A ≤ B on meeting rate | Recalibrate scoring |
+| A source has high volume, low meetings | Cut its credits; tighten its filters |
+| A segment has great reply rate, few people | Find more lookalikes for it |
+| Variant B wins with p < 0.05 and enough volume | Roll out B; test the next thing |
+| p ≥ 0.05 | Not proven; keep testing or stop |
+
+## 12.9 Check yourself
+
+1. 8/100 vs 12/100 replies. Is B better?
+2. Why keep pipeline-health metrics separate from outcome metrics?
+3. What does reverse ETL add to a warehouse setup?
+
+<details><summary>Answers</summary>
+
+1. Not proven: the sample is too small for that difference to be significant.
+2. A healthy pipeline can still produce useless scores, and good scores can hide a broken source; you need to see both.
+3. It pushes modelled results (scores, segments) from the warehouse back into the CRM where reps work.
+</details>

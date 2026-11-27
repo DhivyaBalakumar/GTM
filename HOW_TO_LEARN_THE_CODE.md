@@ -275,3 +275,5 @@ build the take-home and handle most live-coding changes.
 - API client exercise (retry, pagination, batching against the local practice API):
   [06-apis-and-webhooks/exercises](06-apis-and-webhooks/exercises)
 - 12 live-coding problems: [13-interview-prep/live_coding_practice](13-interview-prep/live_coding_practice)
+- The 6 patterns inside a full pipeline, plus 8 more: [16-end-to-end-pipeline/15-the-6-core-patterns-in-the-pipeline.md](16-end-to-end-pipeline/15-the-6-core-patterns-in-the-pipeline.md),
+  drilled in [16-end-to-end-pipeline/code/pipeline_drill.py](16-end-to-end-pipeline/code/pipeline_drill.py) (14 checked functions)

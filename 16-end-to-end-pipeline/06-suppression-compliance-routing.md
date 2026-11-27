@@ -5,6 +5,35 @@ Two gates that protect the company and the reps:
 - **Suppression** decides who must **not** be contacted (or not by cold outbound).
 - **Routing** decides **who owns** each lead/account and how fast they must act.
 
+## 6.0 Start from zero
+
+Two simple questions every lead must answer before anyone contacts them:
+
+1. **May we contact them at all, and in this way?** (suppression + compliance)
+2. **Who is responsible for them?** (routing)
+
+**Suppression, from zero:** a "do not contact" list, built from several lists. It's a `set` in code,
+because the question is always "is this email/domain in there?":
+
+```python
+unsubscribed = {"paul.lang@mosaichr.de"}
+"paul.lang@mosaichr.de" in unsubscribed     # True, instantly, even with a million entries
+```
+
+**Why customers and open deals are suppressed:** they're not "don't care" people, they're
+*somebody else's conversation*. A cold email to a company in late-stage negotiation makes your AE look
+disorganised. Those signals turn into tasks for the owner instead.
+
+**Routing, from zero:** assigning each lead to one rep with clear rules, in order, so no lead is
+orphaned and no two reps fight over an account.
+
+**Round robin, from zero:** taking turns. With reps `[lena, jonas]`: lead 1 → lena, lead 2 → jonas,
+lead 3 → lena. In Python, `itertools.cycle(["lena", "jonas"])` and `next()` each time.
+
+**Lawful basis, from zero (EU):** GDPR says you need a reason to use someone's personal data. For B2B
+outreach that's usually *legitimate interest*: the message is relevant to their job, you tell them
+where you got their data, and you stop immediately if they object.
+
 ## 6.1 Suppression: who never gets a cold email
 
 | List | Why | Where it comes from |
@@ -131,3 +160,51 @@ jonas), round-robins new accounts by territory, and sends tier D to nurture.
 
 > "Routing rule one is never steal an owned account. Then named accounts, territory, segment and a
 > persisted round robin, with an SLA alert on inbound demo requests."
+
+## 6.4 Summary
+
+- Suppress **unsubscribes, bounces, competitors, customers, open deals, role inboxes, recently
+  contacted**. Suppressed ≠ ignored: signals on customers/open deals become tasks for the owner.
+- An opt-out must suppress **everywhere, permanently**.
+- Routing order: **existing owner → same account → named accounts → territory → segment → round
+  robin**; tier D to nurture; SLA clock on inbound.
+- Persist the round-robin position between runs.
+
+## 6.5 Key functions to remember
+
+| Function | Input → output |
+| --- | --- |
+| `suppress(contacts, accounts, crm_deals, crm_companies)` (demo) | contacts → `(keep, suppressed)` with reasons |
+| `suppress_reason(c)` | one contact → reason string or `None` |
+| `territory_for(country)` (demo) | `"DE"` → `"DACH"` |
+| `route(scored, accounts)` (demo) | scored contacts → each with `owner` + `route_reason` |
+| SLA check (`late = [...]`) | inbound leads → list over their SLA |
+
+## 6.6 Important logic
+
+| Order | Rule | Result |
+| --- | --- | --- |
+| 1 | Email unsubscribed or bounced | Suppress |
+| 2 | Competitor domain | Suppress |
+| 3 | Account is a customer | Suppress cold; expansion task to AM |
+| 4 | Account has an open deal | Suppress cold; task to deal owner |
+| 5 | Role inbox | Suppress |
+| 6 | Account has an owner | Keep that owner |
+| 7 | Another contact at the account was just assigned | Same owner |
+| 8 | Tier D | Nurture, no rep |
+| 9 | Else | Territory → round robin |
+
+## 6.7 Check yourself
+
+1. Why is a `set` the right structure for a suppression list?
+2. A tier-A signal fires on an account with an open deal. What happens?
+3. Why must round-robin state be stored somewhere?
+4. A prospect replies "remove me". Which systems must know?
+
+<details><summary>Answers</summary>
+
+1. Membership checks are instant and duplicates are impossible.
+2. No cold email; the deal owner gets an alert/task with the signal.
+3. Otherwise every run restarts at the first rep, who gets more than their share.
+4. The CRM (opt-out), every outreach tool, and the pipeline's suppression list, so the next import doesn't bring them back.
+</details>

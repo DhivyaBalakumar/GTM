@@ -3,6 +3,27 @@
 The batch pipeline keeps the CRM clean. **Signals** make it timely: something happened at an account
 that makes a conversation likely to land now. The output is a short, explained alert to the owner.
 
+## 10.0 Start from zero
+
+**A signal** = an event that makes a conversation more likely to land *now*. "PeopleCo is a German
+software company" is fit. "PeopleCo raised a Series A yesterday and posted a job for an ISO 27001
+manager" is a signal.
+
+**Snapshot diff, from zero:** most sources tell you what *is* (current job posts), not what *changed*.
+To find new events, save yesterday's list, compare it with today's, and keep only what's new:
+
+```python
+yesterday = {"ISO 27001 Manager"}
+today = {"ISO 27001 Manager", "Head of Security"}
+new = today - yesterday            # {'Head of Security'}  (set difference)
+```
+
+**Cooldown, from zero:** don't tell the same rep about the same thing every day. Remember when you last
+alerted on (account, signal type) and stay quiet for N days.
+
+**A good alert has four parts:** *who* (account + best contact), *why now* (the signal), *how good*
+(tier/fit), *what to do* (suggested opener or task).
+
 ## 10.1 Signal types
 
 | Signal | Example | Source | Click or code |
@@ -96,3 +117,45 @@ telemetry: [Real-time Data Pipeline with Signal Detection and Alerts](https://gi
 > sent in the cooldown window. The alert says why, who, and a suggested opener, goes to the owner,
 > or the AE if there's an open deal, and also creates a CRM task so we can measure whether alerts turn
 > into meetings."
+
+## 10.6 Summary
+
+- Signals = funding, hiring, leadership changes, champion moves, web visits, product usage, content
+  engagement, third-party intent, tech changes, regulation, deal changes.
+- **Detect → match to account → diff (only new) → score with decay → cooldown → route → alert + task
+  → measure.**
+- Alerts say who, why now, how good, what to do; low-fit accounts don't alert.
+- Webhooks need dedupe by event id (senders retry).
+
+## 10.7 Key functions to remember
+
+| Function | Input → output |
+| --- | --- |
+| Snapshot diff (`set(today) - set(yesterday)`) | two snapshots → new events |
+| `maybe_alert(event, account, sent_log)` | event → Slack message + task, or skip (cooldown / low fit) |
+| Webhook handler with `seen_ids` | event → processed once |
+| `score_contact` intent part (demo) | signals → intent points |
+
+## 10.8 Important logic
+
+| Condition | Alert? |
+| --- | --- |
+| Event already seen in the last snapshot | No |
+| Same account + signal type alerted within cooldown | No |
+| Account fit below threshold | No |
+| Open deal | Yes, to the **deal owner**, as a task |
+| Customer | Yes, to the **account manager** (expansion) |
+| Otherwise | Yes, to the account owner |
+
+## 10.9 Check yourself
+
+1. Why does "company has a security job open" need a diff to become a signal?
+2. What breaks if you don't dedupe webhook events by id?
+3. Why create a CRM task as well as a Slack message?
+
+<details><summary>Answers</summary>
+
+1. The job may have been open for months; only a *new* post says something changed.
+2. Retries create duplicate alerts/actions (two tasks, two Slack messages).
+3. Slack scrolls away; the task is trackable, so you can measure whether alerts lead to meetings.
+</details>

@@ -18,8 +18,25 @@ Everything runs offline. The demo script does all 11 steps on the sample data in
 ```powershell
 python 16-end-to-end-pipeline/code/pipeline_end_to_end.py           # every step, printed
 python 16-end-to-end-pipeline/code/pipeline_end_to_end.py --twice   # proves re-runs create nothing new
+python 16-end-to-end-pipeline/code/summarize_demo.py                # summarizing data and text
+python 16-end-to-end-pipeline/code/pipeline_drill.py                # 14 functions to rebuild, checked
 pytest 16-end-to-end-pipeline/code                                  # the checks
 ```
+
+## How to study this module
+
+1. **New to the words?** Start with [chapter 0: every concept from zero](00-basics-from-zero.md). It
+   ends by following one real record (Lena Vogel at Opal Analytics) through every step.
+2. **Run the demo**, then read chapters 01–12 in order. Each starts with a *Start from zero* section
+   and ends with a **summary, key functions, important logic and check-yourself questions**.
+3. **Learn the building blocks:** [chapter 15](15-the-6-core-patterns-in-the-pipeline.md) shows the
+   6 core patterns (plus 8 more) at every place they appear in the pipeline;
+   [chapter 16](16-important-functions-logic-and-code.md) explains every important function, all the
+   decision logic and the 20 Python idioms the code uses.
+4. **Summarizing:** [chapter 17](17-summarizing-data-and-text.md) covers numbers (Counter, groupby,
+   pivot, SQL) and text (Claude briefs, map-reduce, grounding checks).
+5. **Practise without looking:** fill in [code/pipeline_drill.py](code/pipeline_drill.py) until
+   14/14 pass; repeat 2–3 days later. Then the interview walkthrough in chapter 14.
 
 ## The pipeline on one page
 
@@ -67,6 +84,14 @@ flowchart LR
 | — | [Tool stack cheat sheet](13-tool-stack-cheatsheet.md) | Every tool on one page | — | — |
 | — | [Telling the story in an interview](14-interview-walkthrough.md) | The 2-minute walkthrough + likely questions | — | — |
 
+| Foundations and reference | What's in it | Code |
+| --- | --- | --- |
+| [0. Every concept from zero](00-basics-from-zero.md) | Records, keys, types, JSON, HTTP, status codes, auth, pagination, rate limits, batching, webhooks, idempotency, normalising, dedupe, enrichment, scoring, CRM, cron; one record's journey with real values | — |
+| [15. The 6 core patterns (+8) in the pipeline](15-the-6-core-patterns-in-the-pipeline.md) | Each pattern: recipe, pipeline version, every place it runs, bugs, "now change it" requests | whole demo |
+| [16. Important functions, logic and code](16-important-functions-logic-and-code.md) | Every function explained; the full decision flow; 20 Python idioms | `pipeline_end_to_end.py` |
+| [17. Summarizing data and text](17-summarizing-data-and-text.md) | Counter, fill rates, groupby, crosstab, pivot, funnel, SQL, run summaries; Claude briefs, map-reduce, grounding checks, extractive fallback | `summarize_demo.py` |
+| Practice drill | 14 functions to rebuild from recipes, auto-checked | `pipeline_drill.py`, solutions, checks |
+
 ## What the demo run shows (sample data)
 
 | Step | Result |
@@ -74,7 +99,7 @@ flowchart LR
 | Collect | 9 Apollo people over 3 pages (2 automatic retries after 429s), 15 CRM companies over 4 cursor pages, 16 file rows |
 | Clean | 23 clean, 2 quarantined (personal email + student/freelancer) |
 | Dedupe | 23 records → 22 contacts at 19 accounts; flags PeopleCo existing **twice** in the CRM |
-| Enrich | employee count 17 → 19 of 19 accounts filled; 21 of 40 credits; 0 credits on re-run (cache) |
+| Enrich | employee count 17 → 19 of 19 accounts filled; 21 of 40 credits; 0 credits on re-run (cache); one provider error (`greenleafretail.com`) logged while the run continues (core pattern 6) |
 | Suppress | 13 removed: open deals, existing customers, an unsubscribe, a role inbox (`info@`) |
 | Score + segment | 1 tier A, 3 tier B, 2 C, 3 D, each with written reasons |
 | Route | existing CRM owners kept; new accounts round-robined per territory; tier D to nurture |

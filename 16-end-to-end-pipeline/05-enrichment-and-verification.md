@@ -4,6 +4,39 @@
 verified work email, phone, LinkedIn URL, signals) at the lowest cost, with known confidence, and keep
 them fresh.
 
+## 5.0 Start from zero
+
+**Enrichment** = filling in facts you don't have, by asking a provider who does.
+
+| You have | You need | Why |
+| --- | --- | --- |
+| domain `kranich-logistik.de` | employees, industry, country | Scoring and routing |
+| name + domain | verified work email | Outreach |
+| domain | tech stack, funding, hiring | Messaging and signals |
+
+**Credits, from zero:** providers charge per answer, usually only when they return data. 1,000
+lookups × 3 credits = 3,000 credits, so the order of operations matters: **dedupe first, filter by ICP,
+then enrich only missing fields**.
+
+**The waterfall, from zero:** no provider knows everything. Ask the cheapest one first; if it doesn't
+know, ask the next. Stop as soon as you have the answer.
+
+```
+need employees for kranich-logistik.de
+  provider A (1 credit)  → knows company + country, not employees
+  provider B (3 credits) → knows employees 180, industry logistics   ✔ stop
+```
+
+**Cache, from zero:** a dictionary on disk: `{(provider, domain): answer}`. Before paying, look in
+the cache. Save "no answer" too, so you don't pay to ask the same unanswerable question tomorrow.
+
+**Verification, from zero:** a guessed or old email might bounce. Verifiers check whether the mailbox
+exists without sending a real email. Results: valid, invalid, catch-all (the domain accepts
+everything, so it can't confirm), unknown.
+
+**Field ownership, from zero:** decide who may write each field. The pipeline may fill a blank
+industry; it may not overwrite a title a rep corrected yesterday.
+
 ## 5.1 Kinds of enrichment
 
 | Kind | Fields | Typical providers |
@@ -180,3 +213,52 @@ every lookup is cached. `guess_email_patterns()` shows the pattern step.
 > "Enrichment only fills missing or stale fields, through a waterfall from cheapest to most expensive
 > provider, with a cache and a per-run credit budget. Every field keeps its source and date. Emails are
 > verified before anything is sent, and catch-alls are treated as risky."
+
+## 5.10 Summary
+
+- Enrich **only fields that scoring, routing or messaging use**, and only when **missing or stale**.
+- **Waterfall** cheap → expensive, stop at the first good answer; record **source, confidence, date**.
+- **Cache hits and misses** with a TTL; **budget credits per run**; measure hit rate per provider.
+- **Verify every email** before outreach; catch-all = risky.
+- AI enrichment: closed label sets, evidence, validation, cache per domain.
+- Never overwrite human-owned fields.
+
+## 5.11 Key functions to remember
+
+| Function | Input → output |
+| --- | --- |
+| `FakeProvider.lookup(domain)` (demo) | domain → dict or `None` (or raises on a bad response) |
+| `enrich_one(domain, acc, cache, budget_state, stats)` (demo) | one account → filled in place |
+| `enrich(accounts, cache, budget)` (demo) | all accounts → `(credits_used, stats, failed, summary)` |
+| `cached(provider, key, fetch)` | key → `(data, charged?)` with TTL |
+| `candidates(first, last, domain)` / `guess_email_patterns` | name + domain → email guesses |
+| `learn_pattern(known_email, first, last)` | a known email → the company's pattern |
+
+## 5.12 Important logic
+
+| Situation | Decision |
+| --- | --- |
+| Field already filled by a human | Don't touch |
+| Field filled by a provider < TTL ago | Skip (fresh enough) |
+| In cache | Use it, 0 credits |
+| Next provider would exceed the budget | Stop; leave it for the next run; log how many were left |
+| Provider returns nothing | Cache the miss, try the next provider |
+| Provider raises (bad response) | Log the record, continue with the others (pattern 6); don't cache, so it's retried next run |
+| Email `valid` | Usable |
+| Email `catch-all` | Risky: low volume or skip |
+| Email `invalid`/`spamtrap` | Never send |
+
+## 5.13 Check yourself
+
+1. Why dedupe before enriching?
+2. The second run of the demo uses 0 credits. Which two mechanisms make that true?
+3. Why not cache a provider *error*, when you do cache a provider *miss*?
+4. Name one risk of letting an AI column overwrite `industry`.
+
+<details><summary>Answers</summary>
+
+1. Otherwise you pay to enrich the same company or person several times.
+2. The cache (every lookup is stored) and paying only when data is returned.
+3. A miss is a real answer ("we don't know"); an error says nothing, so it should be retried.
+4. It can be confidently wrong without evidence; restrict to a closed list, require evidence, and don't overwrite provider or human facts.
+</details>

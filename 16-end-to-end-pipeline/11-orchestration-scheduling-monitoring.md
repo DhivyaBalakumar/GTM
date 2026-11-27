@@ -4,6 +4,27 @@ The steps only become a **system** when they run on their own, in order, recover
 someone when something is wrong, and can be re-run safely. More in
 [10-production-habits](../10-production-habits).
 
+## 11.0 Start from zero
+
+**Orchestration** = running the steps in the right order, automatically, and knowing what happened.
+
+**A script vs a system:**
+
+| A script | A system |
+| --- | --- |
+| You run it when you remember | A scheduler runs it every morning |
+| If it crashes, you find out days later | Slack tells you within minutes |
+| You re-run everything after a crash | Steps are re-runnable; long pulls resume |
+| Bad data reaches the CRM | Checks stop the run first |
+| Only you understand it | README + runbook + tests |
+
+**Scheduler, from zero:** a program whose only job is "start X at time Y" (cron, GitHub Actions,
+Prefect). **Heartbeat, from zero:** your job pings a monitoring URL when it finishes; if no ping
+arrives by 07:00, *that* service alerts you. It catches the worst failure of all: the job never ran.
+
+**Data checks, from zero:** small `if` statements between steps that ask "does this look normal?"
+(row counts, % quarantined, duplicate keys) and stop the run if not.
+
 ## 11.1 Tools
 
 | Tool | What it is | When to pick it | Click or code |
@@ -160,3 +181,45 @@ is the idempotency test, and `pytest` runs [code/test_pipeline_end_to_end.py](co
 > the CRM, a Slack summary every run, an alert on failure, and a heartbeat in case it never starts.
 > GitHub Actions on a cron is enough at first; I'd move to Prefect or Dagster once there are several
 > dependent pipelines."
+
+## 11.7 Summary
+
+- One entry point, steps in order, **config + secrets outside code**, **structured logs with run_id**.
+- **Data checks between steps** stop the run before bad data reaches the CRM.
+- **Retries per call, idempotent steps per run**, checkpoints for long pulls.
+- **Slack summary every run, alert on failure, heartbeat for "didn't run"**, runbook for each alert.
+- GitHub Actions cron to start; Prefect/Dagster/Airflow when pipelines depend on each other.
+
+## 11.8 Key functions to remember
+
+| Function | Input → output |
+| --- | --- |
+| `main()` | runs every step with logging, checks, Slack, heartbeat |
+| `check(ok, message)` | stops the run with a clear reason |
+| `run()` (demo) | all steps + checks + output files → `(report, crm, cache)` |
+| `slack(text)` | posts a summary/alert |
+| `ping_heartbeat()` | tells the monitor "I ran" |
+
+## 11.9 Important logic
+
+| Check | Fail when (example) |
+| --- | --- |
+| Rows collected | < 50% of the 7-day average |
+| Quarantine rate | > 25% |
+| Enrichment failure rate | > 10% (pattern 6 alert) |
+| Duplicate keys after dedupe | > 0 |
+| Creates on a re-run | > 50% of records |
+| Credits used | > budget |
+
+## 11.10 Check yourself
+
+1. What does a heartbeat catch that a failure alert can't?
+2. Why `concurrency:` in the GitHub Actions workflow?
+3. Where should the "quarantine rate > 25%" check sit, and why there?
+
+<details><summary>Answers</summary>
+
+1. A job that never started (scheduler off, workflow disabled), so no failure was ever raised.
+2. So two runs never overlap and write to the CRM at the same time.
+3. Right after cleaning/validation, before dedupe/enrichment/write-back, so a broken source stops the run before it costs credits or touches the CRM.
+</details>

@@ -6,6 +6,32 @@
 They're different: two leads can both score 85 but need different messages (a fintech CISO vs a SaaS
 founder).
 
+## 7.0 Start from zero
+
+**A score is a ranking tool.** Reps can't call 2,000 people today. A score orders them so the best
+ones come first. It doesn't have to be perfect; it has to be **better than random and explainable**.
+
+**Two questions, two scores:**
+
+| Score | Question | Built from | Example |
+| --- | --- | --- | --- |
+| **Fit** | Do they look like our customers? | Country, industry, size, persona | German software company, 25 staff, CEO |
+| **Intent** | Is now a good time? | Signals and engagement | Raised money, hiring a security lead, came to our webinar |
+
+A perfect-fit company with no intent goes into a slower sequence; a weaker fit with strong intent may
+still be worth a call this week.
+
+**Points, from zero:** each rule adds points if true. The total is capped at 100.
+
+**Tiers, from zero:** buckets that tell people what to *do*: A = call this week, B = sequence, C = light
+touch, D = newsletter only. Easier than remembering what "67" means.
+
+**Reasons, from zero:** a list of the rules that fired ("DE in target region; software; recent
+funding"). Stored in the CRM next to the score so a rep can trust it or argue with it.
+
+**Segments, from zero:** groups that should get the **same message**. A fintech CISO and a SaaS
+founder can both score 85, but need different emails. Segment = vertical × size × persona.
+
 ## 7.1 Tools
 
 | Tool | What it does | Click or code |
@@ -155,3 +181,52 @@ segment like `software:smb:founder_exec`.
 
 > "Segmentation is separate from scoring: it decides the message. Vertical, size and persona map to a
 > sequence, and tiny segments get merged."
+
+## 7.8 Summary
+
+- **Fit** (looks like a customer) + **intent** (now is the time, decaying over time) = score, capped.
+- **Tiers** from config thresholds tell reps what to do; **reasons** make scores trustworthy.
+- Add **negative points** for bad signs; start with **rules**, move to learned weights once you have
+  outcomes.
+- **Segments** (vertical × size × persona) choose the message; merge tiny segments.
+- Recalibrate monthly: tier A must beat tier B on meeting rate.
+
+## 7.9 Key functions to remember
+
+| Function | Input → output |
+| --- | --- |
+| `score_contact(c, acc)` (demo) | contact + account → `{fit, intent, score, tier, reasons}` |
+| `tier_for(score)` (demo) | `90` → `"A"` |
+| `decayed(points, days_ago, half_life)` | points shrink with age |
+| `segment(c, acc)` (demo) | → `{vertical, size_band, persona, segment}` |
+| `SEQUENCES[vertical]` (demo) | segment → sequence id |
+
+## 7.10 Important logic
+
+| Rule (from `CONFIG`) | Points |
+| --- | --- |
+| Country in target countries | +15 |
+| Country in DACH core | +5 |
+| Industry in ICP industries | +20 |
+| 20–500 employees | +15 |
+| Buyer function (engineering, security, IT, executive) | +10 |
+| C-level or VP/Head | +5 |
+| Funding signal | +20 |
+| Security hiring signal | +15 |
+| Came inbound (webinar/website) | +15 |
+| Tiers | A ≥ 80, B ≥ 60, C ≥ 40, else D |
+
+## 7.11 Check yourself
+
+1. Why keep fit and intent as separate numbers instead of only the total?
+2. A funding round was 60 days ago with a 30-day half-life and 20 points. How many points now?
+3. Tier B books more meetings than tier A for two months. What do you do?
+4. Why store reasons in the CRM?
+
+<details><summary>Answers</summary>
+
+1. They drive different actions (fit decides whether to pursue, intent decides when), and you can see why a total is high.
+2. 20 × 0.5² = 5 points.
+3. Check the data, then recalibrate: change weights/ICP in config (or fit a simple model on outcomes) and re-score.
+4. Reps trust and act on scores they understand, and can flag wrong rules.
+</details>

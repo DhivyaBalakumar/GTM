@@ -7,6 +7,33 @@ landing area, without losing anything and without paying for the same record twi
 `raw_webinar_2026-11-27.csv` ...). You never clean in place; you keep the raw copy so you can re-run
 later steps and explain where every value came from.
 
+## 1.0 Start from zero
+
+**What "collecting" means:** copying information about companies and people from the places it lives
+(databases you rent, forms on your website, your own CRM) into one place where your code can work on
+it. Nothing is cleaned or judged yet; you're just gathering the ingredients.
+
+**Three ways data reaches you:**
+
+| Way | Plain meaning | Picture | Example |
+| --- | --- | --- | --- |
+| **Export** (pull by hand) | You click "Download CSV" | Photocopying a page | Apollo list → CSV |
+| **API** (pull by code) | Your program asks the other system's API | Ordering by phone, any time, automatically | `POST /mixed_people/api_search` |
+| **Webhook** (push) | The other system calls you when something happens | A doorbell | Form submitted → your URL is called |
+
+**Why you always keep the raw copy:** if a later step has a bug, you fix it and re-run from the raw
+copy instead of paying the provider again. And when a rep asks "where did this phone number come
+from?", the raw file answers.
+
+**Search vs enrichment, from zero:** a *search* is "show me CTOs at German software companies with
+20–500 staff" and returns names, titles and companies (often free or cheap). *Enrichment* is "give me
+the verified email and phone for this specific person" and costs credits. So: search wide, filter
+hard, enrich only the survivors.
+
+**Words used in this chapter:** source, export, API, endpoint, API key, webhook, landing zone (raw
+storage), run id (a label for one execution), credits, data contract (the fields you expect).
+All explained in [chapter 0](00-basics-from-zero.md).
+
 ## 1.1 The four families of sources
 
 ```mermaid
@@ -212,3 +239,48 @@ In the demo: `collect()`, `FakeApolloPeopleSearch`, `FakeHubSpotCompanies` in
 
 > "For one-off lists, a CSV export is fine. Once a list is recurring or feeds the CRM, it becomes code
 > on a schedule, or a webhook if it's event-driven."
+
+## 1.8 Summary
+
+- Data comes from **outbound databases** (Apollo, Cognism...), **inbound** (forms, webinars),
+  **signals** (funding, hiring, visits) and **your own CRM**: always pull the CRM too.
+- Choose the access method by need: **CSV export** for one-offs, **API in code** for recurring work,
+  **webhooks** for real-time events.
+- **Search is cheap, enrichment costs credits.** Filter before you enrich.
+- **Land raw data unchanged** with `source`, `run_id` and `pulled_at` on every row.
+- Log counts per source: zero rows from a source is an incident.
+
+## 1.9 Key functions to remember
+
+| Function (demo or chapter) | Input → output | Why it exists |
+| --- | --- | --- |
+| `apollo_people_search(page, **filters)` | filters → one page of people JSON | One place for the URL, headers, timeout |
+| `apollo_bulk_enrich(people)` | ≤10 people per call → matches | Respect the bulk limit |
+| `form_submitted()` (Flask) | signed webhook → raw JSONL line | Verify, dedupe by event id, land, answer fast |
+| `collect()` (demo) | nothing → `raw` dict of sources + stats | Runs every source with pagination + retry |
+| `read_csv(path)` (demo) | path → list of dicts | Files from exports |
+
+## 1.10 Important logic
+
+| Situation | Decision |
+| --- | --- |
+| A list you need once, under a few hundred rows | Export CSV by clicking |
+| A list you need every week, or that writes to the CRM | API in code, on a schedule |
+| Something that happens at an unpredictable moment (form, reply, deal change) | Webhook |
+| A search returns more than you can afford to enrich | Tighten filters, enrich only ICP-passing rows |
+| A source returns 0 rows today but ~300 usually | Stop the run and alert; don't write anything |
+
+## 1.11 Check yourself
+
+1. Why should every raw row carry a `source` field? Name two later steps that need it.
+2. Apollo's people search returns no emails. Which endpoint gives them, and what does it cost?
+3. Your webhook endpoint takes 20 seconds to process each event. What goes wrong, and what's the fix?
+4. Why is scraping LinkedIn a bad foundation for a company's pipeline?
+
+<details><summary>Answers</summary>
+
+1. Survivorship (which source wins in dedupe) and attribution/reporting (which source produced pipeline).
+2. `people/bulk_match` (or `people/match`); it consumes credits per matched person.
+3. The sender times out and retries, creating duplicates and load. Verify, store the raw event, return 200 immediately, process asynchronously.
+4. It breaks LinkedIn's terms; accounts get restricted, and the data flow can stop at any time.
+</details>
