@@ -31,6 +31,7 @@ don't memorise code).
 | 13 | [Interview prep](13-interview-prep) | Scripts and practice for the intro call, take-home, live coding (12 checked problems) and final round | Read + practise |
 | 14 | [Cheat sheets](14-cheatsheets) | Python, pandas, SQL, HTTP, Git, cron, data types and structures, and a glossary on a few pages | Reference |
 | 15 | [Deep dives](15-deep-dives) | Long, very explanatory guides: data types and data structures; JSON, APIs and pandas and how this role uses them; deduplication from zero to advanced; each with runnable companion code | Read + code |
+| 16 | [The end-to-end pipeline](16-end-to-end-pipeline) | Every step from collection to CRM and outreach: all the tools per step (Apollo, Clay, ZoomInfo, Cognism, HubSpot, sequencers...), click vs code, pagination, rate limits, cleaning, dedupe, enrichment waterfalls, suppression, scoring, segmentation, routing, upserts, signals, scheduling, reporting; one runnable script doing all 11 steps | Read + code |
 
 Sample data used by the lessons lives in [data/](data) (messy leads with deliberate traps, CRM accounts,
 contacts, deals, inbound leads, an API response and webhook events).
